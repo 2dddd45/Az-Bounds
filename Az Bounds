@@ -1,6 +1,84 @@
+-- Simple Fly Script for Roblox
+-- Insert this as a LocalScript, e.g., in StarterPlayerScripts
+
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
-humanoid.WalkSpeed = 100
+-- Flight toggling variables
+local flying = false
+local speed = 50
+local flightDirection = Vector3.new(0, 0, 0)
 
+-- User input service for detecting keypresses
+local userInputService = game:GetService("UserInputService")
+
+-- Flight control
+local function toggleFly()
+    flying = not flying
+    if flying then
+        local bodyVelocity = Instance.new("BodyVelocity", humanoidRootPart)
+        bodyVelocity.Name = "FlightVelocity"
+        bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    else
+        if humanoidRootPart:FindFirstChild("FlightVelocity") then
+            humanoidRootPart.FlightVelocity:Destroy()
+        end
+    end
+end
+
+-- Update flight direction based on key inputs
+local function updateFlightDirection(input, gameProcessed)
+    if gameProcessed then return end
+
+    if flying then
+        if input.KeyCode == Enum.KeyCode.W then
+            flightDirection = Vector3.new(0, 0, -1)
+        elseif input.KeyCode == Enum.KeyCode.S then
+            flightDirection = Vector3.new(0, 0, 1)
+        elseif input.KeyCode == Enum.KeyCode.A then
+            flightDirection = Vector3.new(-1, 0, 0)
+        elseif input.KeyCode == Enum.KeyCode.D then
+            flightDirection = Vector3.new(1, 0, 0)
+        elseif input.KeyCode == Enum.KeyCode.Space then
+            flightDirection = Vector3.new(0, 1, 0)
+        elseif input.KeyCode == Enum.KeyCode.LeftShift then
+            flightDirection = Vector3.new(0, -1, 0)
+        end
+    end
+end
+
+-- Stop flight movement when keys are released
+local function stopFlightDirection(input, gameProcessed)
+    if gameProcessed then return end
+
+    if flying and (
+        input.KeyCode == Enum.KeyCode.W or
+        input.KeyCode == Enum.KeyCode.S or
+        input.KeyCode == Enum.KeyCode.A or
+        input.KeyCode == Enum.KeyCode.D or
+        input.KeyCode == Enum.KeyCode.Space or
+        input.KeyCode == Enum.KeyCode.LeftShift
+    ) then
+        flightDirection = Vector3.new(0, 0, 0)
+    end
+end
+
+-- Main flight loop
+game:GetService("RunService").RenderStepped:Connect(function()
+    if flying and humanoidRootPart:FindFirstChild("FlightVelocity") then
+        humanoidRootPart.FlightVelocity.Velocity = flightDirection * speed
+    end
+end)
+
+-- Bind toggle and movement functions
+userInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.F then -- Press 'F' to toggle flight
+        toggleFly()
+    else
+        updateFlightDirection(input, gameProcessed)
+    end
+end)
+
+userInputService.InputEnded:Connect(stopFlightDirection)
